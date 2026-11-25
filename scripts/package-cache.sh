@@ -41,7 +41,14 @@ if [ "$tool" != package-cache.sh ]; then
   done
   mounted=
   case "$tool" in
-    debootstrap) exec "$real" --cache-dir=/package-cache/apt "$@";;
+    debootstrap)
+      # --cache-dir landed in debootstrap 1.0.114; bionic ships 1.0.95 and
+      # rejects the flag outright, so only pass it when the tool understands it.
+      if "$real" --help 2>&1 | grep -q -- '--cache-dir'; then
+        exec "$real" --cache-dir=/package-cache/apt "$@"
+      fi
+      exec "$real" "$@"
+      ;;
     dnf|dnf5|microdnf)
       if [ -n "$root" ] && [ "$clean" = false ]; then
         mounted="$root/var/cache/dnf"

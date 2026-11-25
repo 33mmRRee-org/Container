@@ -87,7 +87,7 @@ jobs:
     timeout-minutes: 330
     strategy:
       fail-fast: false
-      max-parallel: 8
+      max-parallel: 16
       matrix: ${{ fromJSON(needs.discover.outputs.targets || '{"include":[]}') }}
     steps:
       - uses: actions/checkout@v7
@@ -95,9 +95,12 @@ jobs:
         id: packages
         uses: actions/cache/restore@v5
         with:
+          # The package index fingerprint deliberately stays out of the key.
+          # Including it produced a new entry on every upstream index change and
+          # pushed the cache towards eviction, which slowed later builds down.
           path: ${{ runner.temp }}/package-cache
-          key: packages-v1-${{ matrix.key }}-${{ matrix.fingerprint }}
-          restore-keys: packages-v1-${{ matrix.key }}-
+          key: packages-v1-${{ matrix.key }}
+          restore-keys: packages-v1-${{ matrix.key }}
       - uses: docker/setup-qemu-action@v4
         if: matrix.emulation != ''
         with:
@@ -146,7 +149,9 @@ jobs:
           sudo chown -R "$(id -u):$(id -g)" "$PACKAGE_CACHE"
           bash scripts/package-cache.sh --prune
       - name: Save package downloads
-        if: always() && steps.packages.outputs.cache-hit != 'true'
+        # Only cache a directory that actually holds packages; empty or pruned
+        # caches used to be stored and then evicted, wasting cache quota.
+        if: always() && steps.packages.outputs.cache-hit != 'true' && steps.packages.outputs.cache-matched-key == ''
         uses: actions/cache/save@v5
         with:
           path: ${{ runner.temp }}/package-cache
@@ -260,7 +265,7 @@ jobs:
     timeout-minutes: 120
     strategy:
       fail-fast: false
-      max-parallel: 4
+      max-parallel: 8
       matrix: ${{ fromJSON(needs.discover.outputs.releases || '{"include":[]}') }}
     env:
       DISTRIBUTION: ${{ matrix.distribution }}
