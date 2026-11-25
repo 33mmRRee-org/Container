@@ -235,7 +235,7 @@ jobs:
     timeout-minutes: 120
     strategy:
       fail-fast: false
-      max-parallel: 8
+      max-parallel: 20
       matrix: ${{ fromJSON(needs.discover.outputs.releases || '{"include":[]}') }}
     env:
       DISTRIBUTION: ${{ matrix.distribution }}
