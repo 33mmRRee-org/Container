@@ -18,7 +18,7 @@ if [[ "${1:-}" == --copy ]]; then
   destination=$3
   [[ "$source" =~ ^ghcr\.io/33mmrree-org/[a-z0-9]+@sha256:[a-f0-9]{64}$ ]]
   registry='Docker Hub'
-  if [[ "$destination" != "docker.io/lphllc/${source#ghcr.io/33mmrree-org/}" ]]; then
+  if [[ "$destination" != "docker.io/thebigman/${source#ghcr.io/33mmrree-org/}" ]]; then
     quay_account=${QUAY_NAME:-}
     [[ "$quay_account" =~ ^[a-z0-9][a-z0-9_-]*(\+[a-z0-9][a-z0-9_-]*)?$ ]]
     quay_namespace=${quay_account%%+*}

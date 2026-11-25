@@ -191,7 +191,7 @@ def release_published(targets):
         os_version = os_versions.pop()
         if os_version and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', os_version):
             tags.add(os_version)
-    docker_repository = 'docker.io/lphllc/' + targets[0]['distribution'].lower()
+    docker_repository = 'docker.io/thebigman/' + targets[0]['distribution'].lower()
     quay_repository = publication.quay_repository(targets[0]['distribution'])
     # Backfill registries from immutable, tested GHCR records when indexes or aliases
     # are missing/outdated. This queues publication without rebuilding unchanged images.

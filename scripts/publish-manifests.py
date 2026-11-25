@@ -133,10 +133,10 @@ def publish_index(repository, tags, index):
         name = repository.removeprefix('ghcr.io/')
         registry, service, token_url = 'ghcr.io', 'ghcr.io', 'https://ghcr.io/token'
         username, password = os.environ['GITHUB_ACTOR'], os.environ['GH_TOKEN']
-    elif repository.startswith('docker.io/lphllc/'):
+    elif repository.startswith('docker.io/thebigman/'):
         name = repository.removeprefix('docker.io/')
         registry, service, token_url = 'registry-1.docker.io', 'registry.docker.io', 'https://auth.docker.io/token'
-        username, password = os.environ.get('DOCKER_USERNAME') or 'lphllc', os.environ['DOCKER_SECRET']
+        username, password = os.environ.get('DOCKER_USERNAME') or 'thebigman', os.environ['DOCKER_SECRET']
     elif repository.startswith('quay.io/') and repository == quay_repository(repository.rsplit('/', 1)[1]):
         name = repository.removeprefix('quay.io/')
         registry, service, token_url = 'quay.io', 'quay.io', 'https://quay.io/v2/auth'
@@ -203,7 +203,7 @@ def publish(plan, directory, validate_only=False):
             continue
         try:
             repository, tags, index = release_index(distribution, version, targets, approved)
-            docker_repository = 'docker.io/lphllc/' + distribution.lower()
+            docker_repository = 'docker.io/thebigman/' + distribution.lower()
             quay_destination = quay_repository(distribution)
         except Exception as error:
             failures.append(dict(distribution=distribution, version=version, error=str(error)))
