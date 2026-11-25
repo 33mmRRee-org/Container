@@ -29,6 +29,27 @@ def download(url):
             time.sleep(5 * (attempt + 1))
 
 
+def reachable(url):
+    """Return True when the URL responds without an HTTP error."""
+    try:
+        download(url)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+
+def ubuntu_archive(arch):
+    """Pick the mirror that still publishes the requested architecture.
+
+    Suites move from archive.ubuntu.com to old-releases.ubuntu.com once they
+    leave standard support, so probe instead of assuming either host.
+    """
+    candidates = (['archive.ubuntu.com/ubuntu', 'old-releases.ubuntu.com/ubuntu']
+                  if arch in ('amd64', '386')
+                  else ['ports.ubuntu.com/ubuntu-ports', 'old-releases.ubuntu.com/ubuntu'])
+    return candidates
+
+
 def index_content(kind, data, architecture):
     if kind == 'apt':
         # Release dates/signatures change even when the package indexes do not.
@@ -96,14 +117,30 @@ def fingerprint(target, source, repo_root):
     apk = {'amd64': 'x86_64', 'arm64': 'aarch64', '386': 'x86',
            'arm': 'armhf' if variant == ['v6'] else 'armv7'}.get(arch, arch)
     values = dict(version=version.removeprefix('stream'), deb=deb, rpm=rpm, apk=apk,
-                  ubuntu_archive='archive.ubuntu.com/ubuntu' if arch in ('amd64', '386')
-                  else 'ports.ubuntu.com/ubuntu-ports',
+                  ubuntu_archive='',
                   suite=target['branch'].removeprefix('ubuntu/'))
     settings = json.loads((repo_root / distro.lower() / 'repositories.json').read_text())
-    urls = [(item['kind'], item['url'].format(**values)) for item in settings
-            if int(values['version']) >= item.get('min_version', 0)
-            and arch not in item.get('exclude_architectures', [])] if distro in ('RockyLinux',) else [
-                (item['kind'], item['url'].format(**values)) for item in settings]
+
+    def render(archive):
+        values['ubuntu_archive'] = archive
+        return [(item['kind'], item['url'].format(**values)) for item in settings
+                if int(values['version']) >= item.get('min_version', 0)
+                and arch not in item.get('exclude_architectures', [])] if distro in ('RockyLinux',) else [
+                    (item['kind'], item['url'].format(**values)) for item in settings]
+
+    if distro == 'Ubuntu':
+        # Suites relocate to old-releases once they leave standard support; use
+        # whichever mirror still serves the suite so no manual edit is needed.
+        urls = None
+        for archive in ubuntu_archive(arch):
+            candidate = render(archive)
+            if reachable(candidate[0][1]):
+                urls = candidate
+                break
+        if urls is None:
+            raise RuntimeError(f'No Ubuntu archive publishes suite {values["suite"]} for {arch}')
+    else:
+        urls = render(values['ubuntu_archive'])
     # The rootfs repositories remain defined by the mirrored upstream descriptions.
     if distro in ('Fedora', 'RockyLinux'):
         variables = dict(releasever=values['version'], basearch=rpm)

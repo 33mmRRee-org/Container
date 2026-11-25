@@ -2,10 +2,26 @@
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y --no-install-recommends live-build debootstrap germinate \
-  distro-info distro-info-data apt-utils ca-certificates gnupg git curl \
-  python3 python3-apt python3-yaml python3-launchpadlib python3-click \
-  jq sudo wget rsync attr gettext xz-utils grep-dctrl uuid-runtime fdisk
+
+# Packages the OCI build itself needs. fdisk left util-linux in newer suites but
+# older ones ship it inside util-linux, so it is resolved separately below.
+required="live-build debootstrap germinate distro-info distro-info-data apt-utils \
+  ca-certificates gnupg git curl python3 python3-apt python3-yaml python3-launchpadlib \
+  python3-click jq sudo wget rsync attr gettext xz-utils grep-dctrl uuid-runtime"
+apt-get install -y --no-install-recommends $required
+
+# fdisk is a standalone package on newer suites and part of util-linux on older
+# ones. Pick whichever the suite actually publishes instead of hard-coding it.
+if apt-get install -y --no-install-recommends fdisk 2>/dev/null; then
+  :
+elif apt-get install -y --no-install-recommends util-linux 2>/dev/null; then
+  :
+else
+  echo 'Neither fdisk nor util-linux could be installed.' >&2
+  exit 1
+fi
+command -v fdisk >/dev/null || { echo 'fdisk is still unavailable.' >&2; exit 1; }
+
 mkdir /recipe /work
 cp -a /source/. /recipe/
 python3 /build-tools/ubuntu/prepare-config.py /recipe/live-build/auto/config
