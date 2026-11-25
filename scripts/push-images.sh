@@ -16,13 +16,13 @@ if [[ "${1:-}" == --copy ]]; then
   [[ $# == 3 ]]
   source=$2
   destination=$3
-  [[ "$source" =~ ^ghcr\.io/low-price-hosting/[a-z0-9]+@sha256:[a-f0-9]{64}$ ]]
+  [[ "$source" =~ ^ghcr\.io/33mmrree-org/[a-z0-9]+@sha256:[a-f0-9]{64}$ ]]
   registry='Docker Hub'
-  if [[ "$destination" != "docker.io/lphllc/${source#ghcr.io/low-price-hosting/}" ]]; then
+  if [[ "$destination" != "docker.io/lphllc/${source#ghcr.io/33mmrree-org/}" ]]; then
     quay_account=${QUAY_NAME:-}
     [[ "$quay_account" =~ ^[a-z0-9][a-z0-9_-]*(\+[a-z0-9][a-z0-9_-]*)?$ ]]
     quay_namespace=${quay_account%%+*}
-    [[ "$destination" == "quay.io/$quay_namespace/${source#ghcr.io/low-price-hosting/}" ]]
+    [[ "$destination" == "quay.io/$quay_namespace/${source#ghcr.io/33mmrree-org/}" ]]
     registry='Quay'
   fi
   digest=${source##*@}
@@ -50,7 +50,7 @@ platform=$(jq -er .platform "$record")
 checksum=$(sha256sum "$archive")
 [[ "${checksum%% *}" == "$(jq -er .archive_sha256 "$record")" ]]
 repository=${reference%%:*}
-[[ "$repository" == ghcr.io/low-price-hosting/* ]]
+[[ "$repository" == ghcr.io/33mmrree-org/* ]]
 
 # crane's Docker archive reader accepts an uncompressed tar file.
 tarball="$RUNNER_TEMP/publish-image.tar"
@@ -83,8 +83,8 @@ jq -e --arg image "$image" --arg digest "$digest" --arg platform "$platform" \
   .descriptor = {
     digest:$digest, mediaType:$type, size:$size,
     platform:({os:$parts[0],architecture:$parts[1]} + (if $parts[2] then {variant:$parts[2]} else {} end)),
-    annotations:({"io.low-price-hosting.build.inputs":$fingerprint,"io.low-price-hosting.tested":"true"} +
-      (if .os_version then {"io.low-price-hosting.os.version":.os_version} else {} end))
+    annotations:({"io.33mmrree-org.build.inputs":$fingerprint,"io.33mmrree-org.tested":"true"} +
+      (if .os_version then {"io.33mmrree-org.os.version":.os_version} else {} end))
   } | .image=$image | .pushed=true
 ' "$record" > "$record.tmp"
 mv "$record.tmp" "$record"

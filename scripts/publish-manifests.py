@@ -61,7 +61,7 @@ def platform_descriptor(platform):
 
 
 def release_index(distribution, version, targets, records):
-    repository = 'ghcr.io/low-price-hosting/' + distribution.lower()
+    repository = 'ghcr.io/33mmrree-org/' + distribution.lower()
     descriptors, images, os_versions = [], [], set()
     for target in sorted(targets, key=lambda item: item['platform']):
         item = records[target['key']]
@@ -74,9 +74,9 @@ def release_index(distribution, version, targets, records):
                 or not isinstance(descriptor.get('size'), int) or descriptor['size'] <= 0
                 or descriptor.get('platform') != platform_descriptor(target['platform'])
                 or not re.fullmatch(r'[a-f0-9]{64}', target['fingerprint'])
-                or annotations.get('io.low-price-hosting.build.inputs') != target['fingerprint']
-                or annotations.get('io.low-price-hosting.os.version') != item.get('os_version')
-                or annotations.get('io.low-price-hosting.tested') != 'true'):
+                or annotations.get('io.33mmrree-org.build.inputs') != target['fingerprint']
+                or annotations.get('io.33mmrree-org.os.version') != item.get('os_version')
+                or annotations.get('io.33mmrree-org.tested') != 'true'):
             raise ValueError(f'Invalid tested image descriptor: {target["key"]}')
         descriptors.append(descriptor)
         images.append(item['image'])
@@ -89,7 +89,7 @@ def release_index(distribution, version, targets, records):
         tags.add(actual_version)
     if any(not re.fullmatch(TAG_PATTERN, tag) for tag in tags):
         raise ValueError('Invalid release tag')
-    source = 'https://github.com/Low-Price-Hosting/' + distribution
+    source = 'https://github.com/33mmRRee-org/' + distribution
     architectures = ', '.join(target['platform'].removeprefix('linux/') for target in sorted(targets, key=lambda item: item['platform']))
     annotations = {
         'org.opencontainers.image.source': source,
@@ -97,13 +97,13 @@ def release_index(distribution, version, targets, records):
         'org.opencontainers.image.title': distribution + ' ' + version,
         'org.opencontainers.image.description': f'{distribution} {actual_version or version} base image. Architectures: {architectures}. Built from {source}.',
         'org.opencontainers.image.version': version,
-        'org.opencontainers.image.vendor': 'Low-Price-Hosting',
-        'io.low-price-hosting.build.source': 'https://github.com/Low-Price-Hosting/Container',
-        'io.low-price-hosting.release.schema': '2',
-        'io.low-price-hosting.release.inputs': hashlib.sha256('\n'.join(sorted(images)).encode()).hexdigest(),
+        'org.opencontainers.image.vendor': '33mmRRee-org',
+        'io.33mmrree-org.build.source': 'https://github.com/33mmRRee-org/Container',
+        'io.33mmrree-org.release.schema': '2',
+        'io.33mmrree-org.release.inputs': hashlib.sha256('\n'.join(sorted(images)).encode()).hexdigest(),
     }
     if actual_version:
-        annotations['io.low-price-hosting.os.version'] = actual_version
+        annotations['io.33mmrree-org.os.version'] = actual_version
     index = dict(schemaVersion=2, mediaType=INDEX_TYPE, manifests=descriptors, annotations=annotations)
     # Publish latest last so the default installation example points at a release.
     ordered_tags = [version, *sorted(tags - {version, 'latest'})]
@@ -129,7 +129,7 @@ def registry_request(request):
 def publish_index(repository, tags, index):
     # The tested child manifests are already present in this repository by digest.
     # PUT the OCI index directly to preserve descriptor annotations and variants.
-    if repository.startswith('ghcr.io/low-price-hosting/'):
+    if repository.startswith('ghcr.io/33mmrree-org/'):
         name = repository.removeprefix('ghcr.io/')
         registry, service, token_url = 'ghcr.io', 'ghcr.io', 'https://ghcr.io/token'
         username, password = os.environ['GITHUB_ACTOR'], os.environ['GH_TOKEN']

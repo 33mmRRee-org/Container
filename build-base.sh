@@ -12,8 +12,8 @@ KEY=$(jq -er .key <<< "$BUILD_TARGET")
 content_key=$(jq -er .fingerprint <<< "$BUILD_TARGET")
 source_commit=$(jq -er .source_commit <<< "$BUILD_TARGET")
 lower=$(tr '[:upper:]' '[:lower:]' <<< "$DISTRIBUTION")
-image="ghcr.io/low-price-hosting/$lower"
-source_label="https://github.com/Low-Price-Hosting/$DISTRIBUTION"
+image="ghcr.io/33mmrree-org/$lower"
+source_label="https://github.com/33mmRRee-org/$DISTRIBUTION"
 WORK=$(mktemp -d "$RUNNER_TEMP/container-build.XXXXXXXX")
 cd "$WORK"
 IMAGE_TEST_LIST="$RUNNER_TEMP/image-test-list.txt"
@@ -34,14 +34,14 @@ jq -n --arg distribution "$DISTRIBUTION" --arg version "$VERSION" --arg source "
     "org.opencontainers.image.source": $source,
     "org.opencontainers.image.url": $source,
     "org.opencontainers.image.title": ($distribution + " " + $version),
-    "org.opencontainers.image.description": ("Base container image built from Low-Price-Hosting/" + $distribution + " recipes."),
+    "org.opencontainers.image.description": ("Base container image built from 33mmRRee-org/" + $distribution + " recipes."),
     "org.opencontainers.image.version": $version,
     "org.opencontainers.image.revision": $revision,
-    "org.opencontainers.image.vendor": "Low-Price-Hosting",
-    "io.low-price-hosting.source.commit": $source_commit,
-    "io.low-price-hosting.build.source": "https://github.com/Low-Price-Hosting/Container",
-    "io.low-price-hosting.platform": $platform
-  } + (if $build_revision == "" then {} else {"io.low-price-hosting.build.revision": $build_revision} end)
+    "org.opencontainers.image.vendor": "33mmRRee-org",
+    "io.33mmrree-org.source.commit": $source_commit,
+    "io.33mmrree-org.build.source": "https://github.com/33mmRRee-org/Container",
+    "io.33mmrree-org.platform": $platform
+  } + (if $build_revision == "" then {} else {"io.33mmrree-org.build.revision": $build_revision} end)
 ' > "$IMAGE_LABELS"
 mkdir context
 source "$REPO_ROOT/scripts/build-common.sh"

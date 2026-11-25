@@ -118,7 +118,7 @@ def published_index(reference):
 
 
 def tested_record(target):
-    repository = 'ghcr.io/low-price-hosting/' + target['distribution'].lower()
+    repository = 'ghcr.io/33mmrree-org/' + target['distribution'].lower()
     published = published_index(repository + ':' + target['version'])
     if not published or not re.fullmatch(r'[a-f0-9]{64}', target.get('fingerprint', '')):
         return None
@@ -130,8 +130,8 @@ def tested_record(target):
         return None
     descriptor = matching[0]
     annotations = descriptor.get('annotations', {})
-    if (annotations.get('io.low-price-hosting.build.inputs') != target['fingerprint']
-            or annotations.get('io.low-price-hosting.tested') != 'true'
+    if (annotations.get('io.33mmrree-org.build.inputs') != target['fingerprint']
+            or annotations.get('io.33mmrree-org.tested') != 'true'
             or not re.fullmatch(r'sha256:[a-f0-9]{64}', descriptor.get('digest', ''))
             or descriptor.get('mediaType') not in ('application/vnd.oci.image.manifest.v1+json',
                                                    'application/vnd.docker.distribution.manifest.v2+json')
@@ -140,8 +140,8 @@ def tested_record(target):
     record = dict(key=target['key'], platform=target['platform'], fingerprint=target['fingerprint'],
                   tested=True, pushed=True, image=repository + '@' + descriptor['digest'],
                   descriptor=descriptor)
-    if annotations.get('io.low-price-hosting.os.version'):
-        record['os_version'] = annotations['io.low-price-hosting.os.version']
+    if annotations.get('io.33mmrree-org.os.version'):
+        record['os_version'] = annotations['io.33mmrree-org.os.version']
     return record
 
 
@@ -150,7 +150,7 @@ def release_published(targets):
         return False
     images = sorted(target['reused']['image'] for target in targets)
     inputs = hashlib.sha256('\n'.join(images).encode()).hexdigest()
-    repository = 'ghcr.io/low-price-hosting/' + targets[0]['distribution'].lower()
+    repository = 'ghcr.io/33mmrree-org/' + targets[0]['distribution'].lower()
     version = targets[0]['version']
     published = published_index(repository + ':' + version)
     if not published:
@@ -158,12 +158,12 @@ def release_published(targets):
     expected_digest, index = published
     annotations = index.get('annotations', {})
     expected_metadata = {
-        'io.low-price-hosting.release.schema': '2',
-        'io.low-price-hosting.release.inputs': inputs,
-        'org.opencontainers.image.source': 'https://github.com/Low-Price-Hosting/' + targets[0]['distribution'],
+        'io.33mmrree-org.release.schema': '2',
+        'io.33mmrree-org.release.inputs': inputs,
+        'org.opencontainers.image.source': 'https://github.com/33mmRRee-org/' + targets[0]['distribution'],
         'org.opencontainers.image.title': targets[0]['distribution'] + ' ' + version,
         'org.opencontainers.image.version': version,
-        'io.low-price-hosting.build.source': 'https://github.com/Low-Price-Hosting/Container',
+        'io.33mmrree-org.build.source': 'https://github.com/33mmRRee-org/Container',
     }
     if (any(annotations.get(key) != value for key, value in expected_metadata.items())
             or not isinstance(annotations.get('org.opencontainers.image.description'), str)
@@ -181,8 +181,8 @@ def release_published(targets):
         found.add(platform)
         target = wanted[platform]
         metadata = descriptor.get('annotations', {})
-        if (metadata.get('io.low-price-hosting.build.inputs') != target['fingerprint']
-                or metadata.get('io.low-price-hosting.tested') != 'true'
+        if (metadata.get('io.33mmrree-org.build.inputs') != target['fingerprint']
+                or metadata.get('io.33mmrree-org.tested') != 'true'
                 or repository + '@' + descriptor.get('digest', '') != target['reused']['image']):
             return False
     tags = {version, *(alias for target in targets for alias in target['aliases'])}
@@ -264,7 +264,7 @@ def targets(distribution, source, branches):
 
 
 def source_catalog(distribution, source):
-    mirror = f'https://github.com/Low-Price-Hosting/{distribution}.git'
+    mirror = f'https://github.com/33mmRRee-org/{distribution}.git'
     subprocess.run(['git', 'clone', '--quiet', '--depth=1', '--single-branch', '--branch=main',
                     mirror, str(source)], check=True)
     provenance = json.loads((source / '.container-source.json').read_text())
@@ -282,7 +282,7 @@ def discover(selected='all', version='all', verify_only=False):
         for distribution in DISTRIBUTIONS:
             if selected not in ('all', distribution):
                 continue
-            mirror = f'https://github.com/Low-Price-Hosting/{distribution}.git'
+            mirror = f'https://github.com/33mmRRee-org/{distribution}.git'
             source = pathlib.Path(temp) / distribution
             try:
                 branches, releases = source_catalog(distribution, source)

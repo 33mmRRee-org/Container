@@ -21,7 +21,7 @@ case "$distribution" in
   *) echo "Unknown distribution: $distribution" >&2; exit 1 ;;
 esac
 
-expected_source="https://github.com/Low-Price-Hosting/$distribution"
+expected_source="https://github.com/33mmRRee-org/$distribution"
 tested_os_version=
 while IFS= read -r reference || [[ -n "$reference" ]]; do
   reference=${reference%$'\r'}
