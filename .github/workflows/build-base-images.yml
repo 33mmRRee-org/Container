@@ -179,6 +179,32 @@ jobs:
           DISTRIBUTION: ${{ matrix.distribution }}
           IMAGE_PLATFORM: ${{ matrix.platform }}
         run: bash scripts/test-images.sh "$DISTRIBUTION" "$RUNNER_TEMP/image-test-list.txt"
+      - name: Install Docker Scout
+        if: always()
+        uses: docker/scout-action@v1
+        with:
+          command: help
+          dockerhub-user: ${{ vars.DOCKER_USERNAME || 'thebigman' }}
+          dockerhub-password: ${{ secrets.DOCKER_SECRET }}
+      - name: Generate SBOM and vulnerability reports
+        if: always()
+        env:
+          SCOUT_ORG: ${{ vars.SCOUT_ORG }}
+        run: |
+          reference=$(jq -er .image "$RUNNER_TEMP/image.json")
+          if bash scripts/scout-report.sh "$reference" "$RUNNER_TEMP/scout"; then
+            printf 'Scout reports generated for %s\n' "$reference"
+          else
+            printf 'Scout reporting unavailable; build result unchanged.\n' >&2
+          fi
+      - name: Save Scout reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: scout-${{ matrix.key }}
+          path: ${{ runner.temp }}/scout
+          retention-days: 30
+          if-no-files-found: ignore
       - name: Save tested image approval
         uses: actions/upload-artifact@v7
         with:
