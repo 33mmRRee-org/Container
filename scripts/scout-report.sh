@@ -17,11 +17,16 @@ written=0
 write_report() {
   local label=$1 output=$2
   shift 2
-  if docker scout "$@" --output "$output" "$image" >/dev/null 2>&1 && [ -s "$output" ]; then
+  local log="$output.log"
+  # Keep Scout's output: a silent failure hides why a report is missing, which
+  # previously left the SARIF upload pointing at a file that never existed.
+  if docker scout "$@" --output "$output" "$image" > "$log" 2>&1 && [ -s "$output" ]; then
     written=$((written + 1))
     printf 'Scout %s report written: %s\n' "$label" "$output"
+    rm -f "$log"
   else
     printf 'Scout %s report unavailable; continuing without it.\n' "$label" >&2
+    [ -s "$log" ] && { printf '%s\n' "--- Scout output ---" >&2; tail -20 "$log" >&2; }
     rm -f "$output"
   fi
 }
