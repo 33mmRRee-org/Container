@@ -168,12 +168,17 @@ jobs:
           }
           fetch "$base/$archive" /tmp/scout.tar.gz
           fetch "$base/docker-scout_${SCOUT_VERSION}_checksums.txt" /tmp/scout-checksums.txt
-          (cd /tmp && grep " $archive\$" scout-checksums.txt | sha256sum --check --status) \
+          # The checksum file separates hash and name with two spaces, so match
+          # the entry by name and verify the hash instead of relying on grep.
+          expected=$(awk -v name="$archive" '$2 == name {print $1}' /tmp/scout-checksums.txt)
+          actual=$(sha256sum /tmp/scout.tar.gz | awk '{print $1}')
+          [ -n "$expected" ] && [ "$expected" = "$actual" ] \
             || { printf 'Scout CLI checksum mismatch.\n' >&2; exit 1; }
           tar -xzf /tmp/scout.tar.gz -C "$HOME/.docker/cli-plugins" docker-scout
           chmod +x "$HOME/.docker/cli-plugins/docker-scout"
           docker scout version
       - name: Generate SBOM and vulnerability reports
+        id: scout
         if: always() && inputs.verify_only != true && steps.test.outcome == 'success'
         continue-on-error: true
         env:
@@ -185,8 +190,15 @@ jobs:
           else
             printf 'Scout reporting unavailable; build result unchanged.\n' >&2
           fi
+          if [ -s "$RUNNER_TEMP/scout/vulnerabilities.sarif" ]; then
+            echo 'sarif=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'sarif=false' >> "$GITHUB_OUTPUT"
+          fi
       - name: Upload Scout findings to code scanning
-        if: always() && inputs.verify_only != true && steps.test.outcome == 'success'
+        # upload-sarif fails the step when the file is absent, so the report step
+        # records whether a SARIF file exists and this step only runs when it does.
+        if: always() && inputs.verify_only != true && steps.scout.outputs.sarif == 'true'
         uses: github/codeql-action/upload-sarif@v4
         continue-on-error: true
         with:
