@@ -80,14 +80,17 @@ jobs:
           path: build-plan.json
 
   build:
-    name: "Build: ${{ matrix.distribution }} ${{ matrix.version }} · ${{ matrix.architecture }}"
+    name: "Build+Test: ${{ matrix.distribution }} ${{ matrix.version }} · ${{ matrix.architecture }}"
     needs: discover
     if: needs.discover.outputs.has-builds == 'true'
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 330
+    timeout-minutes: 360
     strategy:
       fail-fast: false
-      max-parallel: 16
+      # Building and testing on one runner removes the stage barrier: a finished
+      # target frees its slot immediately instead of waiting for the slowest
+      # build of the whole matrix. 20 matches the GitHub Free concurrency limit.
+      max-parallel: 20
       matrix: ${{ fromJSON(needs.discover.outputs.targets || '{"include":[]}') }}
     steps:
       - uses: actions/checkout@v7
@@ -114,10 +117,11 @@ jobs:
         run: |
           mkdir -p "$PACKAGE_CACHE"
           bash build-base.sh
-      - name: Export built image for Test and Publish
+      - name: Export built image for Publish
         id: archive
         run: bash scripts/image-artifact.sh save "$RUNNER_TEMP/built"
       - name: Transfer built image
+        if: steps.archive.outcome == 'success'
         uses: actions/upload-artifact@v7
         with:
           name: built-${{ matrix.key }}
@@ -125,63 +129,9 @@ jobs:
           compression-level: 0
           retention-days: 1
           if-no-files-found: error
-      - name: Record build result
-        if: always()
-        env:
-          BUILD_TARGET: ${{ toJSON(matrix) }}
-          BUILD_RESULT: ${{ steps.compile.outcome == 'success' && steps.archive.outcome == 'success' && 'success' || 'failure' }}
-          CACHE_HIT: ${{ steps.packages.outputs.cache-matched-key != '' }}
-        run: python3 scripts/summarize-builds.py record "$RUNNER_TEMP/status.json"
-      - name: Save build result
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: status-build-${{ matrix.key }}
-          path: ${{ runner.temp }}/status.json
-          retention-days: 7
-          if-no-files-found: error
-      - name: Keep package download cache bounded
-        if: always()
-        env:
-          PACKAGE_CACHE: ${{ runner.temp }}/package-cache
-        run: |
-          mkdir -p "$PACKAGE_CACHE"
-          sudo chown -R "$(id -u):$(id -g)" "$PACKAGE_CACHE"
-          bash scripts/package-cache.sh --prune
-      - name: Save package downloads
-        # Only cache a directory that actually holds packages; empty or pruned
-        # caches used to be stored and then evicted, wasting cache quota.
-        if: always() && steps.packages.outputs.cache-hit != 'true' && steps.packages.outputs.cache-matched-key == ''
-        uses: actions/cache/save@v5
-        with:
-          path: ${{ runner.temp }}/package-cache
-          key: ${{ steps.packages.outputs.cache-primary-key }}
-
-  test:
-    name: "Test: ${{ matrix.distribution }} ${{ matrix.version }} · ${{ matrix.architecture }}"
-    needs: [discover, build]
-    if: always() && !cancelled() && needs.discover.result == 'success' && needs.discover.outputs.has-builds == 'true'
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      max-parallel: 16
-      matrix: ${{ fromJSON(needs.discover.outputs.targets || '{"include":[]}') }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: docker/setup-qemu-action@v4
-        if: matrix.emulation != ''
-        with:
-          platforms: ${{ matrix.emulation }}
-      - name: Download built image
-        uses: actions/download-artifact@v8
-        with:
-          name: built-${{ matrix.key }}
-          path: ${{ runner.temp }}/built
-      - name: Load the verified build artifact
-        run: bash scripts/image-artifact.sh restore "$RUNNER_TEMP/built"
       - name: Test ${{ matrix.architecture }}
         id: test
+        if: steps.compile.outcome == 'success'
         env:
           DISTRIBUTION: ${{ matrix.distribution }}
           IMAGE_PLATFORM: ${{ matrix.platform }}
@@ -236,30 +186,50 @@ jobs:
           retention-days: 30
           if-no-files-found: ignore
       - name: Save tested image approval
+        if: steps.test.outcome == 'success'
         uses: actions/upload-artifact@v7
         with:
           name: image-${{ matrix.key }}
           path: ${{ runner.temp }}/image.json
           retention-days: 7
           if-no-files-found: error
-      - name: Record test result
+      - name: Record result
         if: always()
         env:
           BUILD_TARGET: ${{ toJSON(matrix) }}
+          BUILD_RESULT: ${{ steps.compile.outcome == 'success' && steps.archive.outcome == 'success' && 'success' || 'failure' }}
           TEST_RESULT: ${{ steps.test.outcome }}
+          CACHE_HIT: ${{ steps.packages.outputs.cache-matched-key != '' }}
         run: python3 scripts/summarize-builds.py record "$RUNNER_TEMP/status.json"
-      - name: Save test result
+      - name: Save result
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: status-test-${{ matrix.key }}
+          name: status-build-${{ matrix.key }}
           path: ${{ runner.temp }}/status.json
           retention-days: 7
           if-no-files-found: error
+      - name: Keep package download cache bounded
+        if: always()
+        env:
+          PACKAGE_CACHE: ${{ runner.temp }}/package-cache
+        run: |
+          mkdir -p "$PACKAGE_CACHE"
+          sudo chown -R "$(id -u):$(id -g)" "$PACKAGE_CACHE"
+          bash scripts/package-cache.sh --prune
+      - name: Save package downloads
+        # Only cache a directory that actually holds packages; empty or pruned
+        # caches used to be stored and then evicted, wasting cache quota.
+        if: always() && steps.packages.outputs.cache-hit != 'true' && steps.packages.outputs.cache-matched-key == ''
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ runner.temp }}/package-cache
+          key: ${{ steps.packages.outputs.cache-primary-key }}
+
 
   publish:
     name: "Publish: ${{ matrix.distribution }} ${{ matrix.version }}"
-    needs: [discover, test]
+    needs: [discover, build]
     if: always() && !cancelled() && needs.discover.result == 'success' && needs.discover.outputs.has-releases == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 120
