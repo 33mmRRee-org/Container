@@ -34,7 +34,7 @@ concurrency:
 jobs:
   discover:
     name: Discover
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     outputs:
       targets: ${{ steps.plan.outputs.targets }}
       has-builds: ${{ steps.plan.outputs.has-builds }}
@@ -231,7 +231,7 @@ jobs:
     name: "Publish: ${{ matrix.distribution }} ${{ matrix.version }}"
     needs: [discover, build]
     if: always() && !cancelled() && needs.discover.result == 'success' && needs.discover.outputs.has-releases == 'true'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 120
     strategy:
       fail-fast: false
@@ -310,7 +310,7 @@ jobs:
     name: Results
     needs: [discover, publish]
     if: always() && !cancelled() && needs.discover.result == 'success'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8

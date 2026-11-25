@@ -315,8 +315,10 @@ def discover(selected='all', version='all', verify_only=False):
                     pending.append(dict(distribution=distribution, **pinned_release, platform=platform, key=key,
                                         architecture=platform.removeprefix('linux/'),
                                         source_commit=commit,
-                                        emulation=arch if arch not in ('amd64', 'arm64', '386') else '',
-                                        runner='ubuntu-24.04-arm' if arch == 'arm64' else 'ubuntu-24.04'))
+                                        # Every job runs on an x86_64 ubuntu-latest
+                                        # runner, so arm64 now needs QEMU as well.
+                                        emulation=arch if arch not in ('amd64', '386') else '',
+                                        runner='ubuntu-latest'))
                 with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
                     result += list(pool.map(lambda t: plan_target(t, snapshot, verify_only), pending))
     if not result and not errors:
