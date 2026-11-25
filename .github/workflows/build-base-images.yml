@@ -136,8 +136,11 @@ jobs:
           DISTRIBUTION: ${{ matrix.distribution }}
           IMAGE_PLATFORM: ${{ matrix.platform }}
         run: bash scripts/test-images.sh "$DISTRIBUTION" "$RUNNER_TEMP/image-test-list.txt"
+      # Scout needs a tested image. Without this guard a failed build left no
+      # image.json, so the reports and the SARIF upload produced three failure
+      # messages that hid the real build error.
       - name: Install Docker Scout CLI
-        if: always() && inputs.verify_only != true
+        if: always() && inputs.verify_only != true && steps.test.outcome == 'success'
         continue-on-error: true
         env:
           SCOUT_VERSION: 1.30.0
@@ -151,15 +154,27 @@ jobs:
           archive="docker-scout_${SCOUT_VERSION}_linux_${arch}.tar.gz"
           base="https://github.com/docker/scout-cli/releases/download/v${SCOUT_VERSION}"
           mkdir -p "$HOME/.docker/cli-plugins"
-          curl --fail --silent --show-error --location --retry 3 "$base/$archive" --output /tmp/scout.tar.gz
-          curl --fail --silent --show-error --location --retry 3 "$base/docker-scout_${SCOUT_VERSION}_checksums.txt" --output /tmp/scout-checksums.txt
+          # Many matrix jobs download the same asset at once, which GitHub
+          # answers with 403 rate limiting. Back off instead of failing.
+          fetch() {
+            local attempt
+            for attempt in 1 2 3 4 5; do
+              if curl --fail --silent --show-error --location "$1" --output "$2"; then
+                return 0
+              fi
+              ((attempt < 5)) || return 1
+              sleep "$((attempt * 10))"
+            done
+          }
+          fetch "$base/$archive" /tmp/scout.tar.gz
+          fetch "$base/docker-scout_${SCOUT_VERSION}_checksums.txt" /tmp/scout-checksums.txt
           (cd /tmp && grep " $archive\$" scout-checksums.txt | sha256sum --check --status) \
             || { printf 'Scout CLI checksum mismatch.\n' >&2; exit 1; }
           tar -xzf /tmp/scout.tar.gz -C "$HOME/.docker/cli-plugins" docker-scout
           chmod +x "$HOME/.docker/cli-plugins/docker-scout"
           docker scout version
       - name: Generate SBOM and vulnerability reports
-        if: always() && inputs.verify_only != true
+        if: always() && inputs.verify_only != true && steps.test.outcome == 'success'
         continue-on-error: true
         env:
           SCOUT_ORG: ${{ vars.SCOUT_ORG }}
@@ -171,14 +186,14 @@ jobs:
             printf 'Scout reporting unavailable; build result unchanged.\n' >&2
           fi
       - name: Upload Scout findings to code scanning
-        if: always() && inputs.verify_only != true
+        if: always() && inputs.verify_only != true && steps.test.outcome == 'success'
         uses: github/codeql-action/upload-sarif@v4
         continue-on-error: true
         with:
           sarif_file: ${{ runner.temp }}/scout/vulnerabilities.sarif
           category: scout-${{ matrix.key }}
       - name: Save Scout reports
-        if: always() && inputs.verify_only != true
+        if: always() && inputs.verify_only != true && steps.test.outcome == 'success'
         uses: actions/upload-artifact@v7
         with:
           name: scout-${{ matrix.key }}
