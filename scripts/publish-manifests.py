@@ -91,12 +91,19 @@ def release_index(distribution, version, targets, records):
         raise ValueError('Invalid release tag')
     source = 'https://github.com/33mmRRee-org/' + distribution
     architectures = ', '.join(target['platform'].removeprefix('linux/') for target in sorted(targets, key=lambda item: item['platform']))
+    # The index repeats the build timestamp and revision carried by every image,
+    # so rebuilding the same revision keeps the whole release reproducible.
+    first = records[sorted(targets, key=lambda item: item['platform'])[0]['key']]
     annotations = {
+        'org.opencontainers.image.created': first.get('created', ''),
         'org.opencontainers.image.source': source,
         'org.opencontainers.image.url': source,
+        'org.opencontainers.image.documentation': 'https://github.com/33mmRRee-org/Container#readme',
+        'org.opencontainers.image.licenses': 'MIT',
         'org.opencontainers.image.title': distribution + ' ' + version,
         'org.opencontainers.image.description': f'{distribution} {actual_version or version} base image. Architectures: {architectures}. Built from {source}.',
         'org.opencontainers.image.version': version,
+        'org.opencontainers.image.revision': first.get('revision', ''),
         'org.opencontainers.image.vendor': '33mmRRee-org',
         'io.33mmrree-org.build.source': 'https://github.com/33mmRRee-org/Container',
         'io.33mmrree-org.release.schema': '2',
@@ -104,6 +111,7 @@ def release_index(distribution, version, targets, records):
     }
     if actual_version:
         annotations['io.33mmrree-org.os.version'] = actual_version
+    annotations = {key: value for key, value in annotations.items() if value}
     index = dict(schemaVersion=2, mediaType=INDEX_TYPE, manifests=descriptors, annotations=annotations)
     # Publish latest last so the default installation example points at a release.
     ordered_tags = [version, *sorted(tags - {version, 'latest'})]

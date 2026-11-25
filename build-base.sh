@@ -27,21 +27,32 @@ jq -e --arg distro "$DISTRIBUTION" '.schema == 1 and .distribution == $distro' s
 revision=$(jq -er .revision source/.container-source.json)
 SOURCE_DATE_EPOCH=$(git -C source show -s --format=%ct HEAD)
 IMAGE_LABELS="$WORK/image-labels.json"
+# created follows SOURCE_DATE_EPOCH, the source commit date, so rebuilding
+# the same revision stays byte-for-byte reproducible.
+created=$(date -u -d "@$SOURCE_DATE_EPOCH" +%Y-%m-%dT%H:%M:%SZ)
 jq -n --arg distribution "$DISTRIBUTION" --arg version "$VERSION" --arg source "$source_label" \
   --arg revision "$revision" --arg source_commit "$source_commit" \
-  --arg build_revision "${GITHUB_SHA:-}" --arg platform "$PLATFORM" '
+  --arg build_revision "${GITHUB_SHA:-}" --arg platform "$PLATFORM" \
+  --arg created "$created" --arg bootstrap "${BOOTSTRAP%@*}" \
+  --arg bootstrap_digest "${BOOTSTRAP##*@}" '
   {
+    "org.opencontainers.image.created": $created,
     "org.opencontainers.image.source": $source,
     "org.opencontainers.image.url": $source,
+    "org.opencontainers.image.documentation": "https://github.com/33mmRRee-org/Container#readme",
+    "org.opencontainers.image.licenses": "MIT",
     "org.opencontainers.image.title": ($distribution + " " + $version),
     "org.opencontainers.image.description": ("Base container image built from 33mmRRee-org/" + $distribution + " recipes."),
     "org.opencontainers.image.version": $version,
     "org.opencontainers.image.revision": $revision,
     "org.opencontainers.image.vendor": "33mmRRee-org",
+    "org.opencontainers.image.base.name": $bootstrap,
+    "org.opencontainers.image.base.digest": $bootstrap_digest,
     "io.33mmrree-org.source.commit": $source_commit,
     "io.33mmrree-org.build.source": "https://github.com/33mmRRee-org/Container",
     "io.33mmrree-org.platform": $platform
   } + (if $build_revision == "" then {} else {"io.33mmrree-org.build.revision": $build_revision} end)
+  | with_entries(select(.value != ""))
 ' > "$IMAGE_LABELS"
 mkdir context
 source "$REPO_ROOT/scripts/build-common.sh"
@@ -56,4 +67,5 @@ reference="$image:$immutable"
 build_image
 printf '%s\n' "$reference" > "$IMAGE_TEST_LIST"
 jq -n --arg key "$KEY" --arg platform "$PLATFORM" --arg image "$reference" --arg fingerprint "$content_key" \
-  '{key:$key,platform:$platform,image:$image,fingerprint:$fingerprint,tested:false,pushed:false}' > "$RUNNER_TEMP/image.json"
+  --arg created "$created" --arg revision "$revision" \
+  '{key:$key,platform:$platform,image:$image,fingerprint:$fingerprint,created:$created,revision:$revision,tested:false,pushed:false}' > "$RUNNER_TEMP/image.json"
