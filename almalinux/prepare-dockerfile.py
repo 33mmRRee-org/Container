@@ -5,16 +5,25 @@ import re
 import sys
 
 source = pathlib.Path(sys.argv[1]).read_text()
-if 'FROM ${SYSBASE} AS system-build' not in source or 'RUN mkdir /mnt/sys-root;' not in source:
+
+# Upstream has shipped both `RUN mkdir /mnt/sys-root;` and the newer
+# `RUN set -e; mkdir /mnt/sys-root;`, so accept either form.
+mkdir_pattern = re.compile(r'RUN (set -e; )?mkdir /mnt/sys-root;')
+mkdir_match = mkdir_pattern.search(source)
+if 'FROM ${SYSBASE} AS system-build' not in source or mkdir_match is None:
     raise RuntimeError('Upstream AlmaLinux build stages changed; review the cache adapter')
-source = source.replace('RUN mkdir /mnt/sys-root;',
+guard = mkdir_match.group(1) or ''
+# Docker requires build flags to precede the shell command word.
+source = source.replace(mkdir_match.group(0),
     'RUN --mount=type=bind,from=package-cache,target=/seed-cache,readonly '
-    'mkdir -p /mnt/sys-root/var/cache/dnf; '
+    + guard + 'mkdir -p /mnt/sys-root/var/cache/dnf; '
     'cp -a /seed-cache/dnf/. /mnt/sys-root/var/cache/dnf/;')
 source = re.sub(r'\bdnf (install|reinstall)', r'dnf --setopt=keepcache=True \1', source)
-cleanup = 'dnf --installroot /mnt/sys-root clean all;'
-if cleanup not in source:
+cleanup_pattern = re.compile(r'dnf\s+--installroot\s+/mnt/sys-root\s+clean\s+all;')
+cleanup_match = cleanup_pattern.search(source)
+if cleanup_match is None:
     raise RuntimeError('Upstream AlmaLinux package cleanup changed')
+cleanup = cleanup_match.group(0)
 source = source.replace(cleanup, 'mkdir -p /saved-package-cache/dnf; '
     'cp -a /mnt/sys-root/var/cache/dnf/. /saved-package-cache/dnf/; ' + cleanup)
 head, separator, tail = source.rpartition('FROM scratch\n')
