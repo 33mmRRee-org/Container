@@ -55,16 +55,16 @@ docker pull quay.io/thebigman/ubuntu:latest
 
 ## 버전과 아키텍처 참고 정보
 
-[2026년 10월 8일 탐색 계획](https://github.com/33mmRRee-org/Container/actions/runs/37741062225)의 버전 및 아키텍처 참고 정보입니다. 이는 탐색된 대상입니다. 게시된 아키텍처는 선택한 태그의 **OS/Arch** 필드나 OCI 인덱스에서 확인하세요.
+각 배포판에 대해 빌드되는 버전과 플랫폼입니다. 게시된 아키텍처는 선택한 태그의 OS/Arch 필드나 OCI 인덱스에서 확인하세요.
 
 | 배포판 | 버전 | 플랫폼 — `linux/` 접두사 포함 |
 |---|---|---|
-| Ubuntu | `22.04`, `24.04`, `26.04` | `amd64`, `arm/v7`, `arm64`, `ppc64le`, `riscv64`, `s390x` |
+| Ubuntu | `18.04`, `20.04`, `22.04`, `24.04`, `26.04` | `amd64`, `arm/v7`, `arm64`, `ppc64le`, `riscv64`, `s390x` |
 | Debian | `bookworm` | `386`, `amd64`, `arm/v7`, `arm64`, `ppc64le` |
 | Debian | `trixie` | `386`, `amd64`, `arm/v5`, `arm/v7`, `arm64`, `ppc64le`, `riscv64`, `s390x` |
 | CentOS Stream | `stream9`, `stream10` | `amd64`, `arm64`, `ppc64le`, `s390x` |
-| Alpine | `3.21`, `3.22`, `3.23`, `3.24` | `386`, `amd64`, `arm/v6`, `arm/v7`, `arm64`, `ppc64le`, `riscv64`, `s390x` |
-| Fedora | `43`, `44` | `amd64`, `arm64`, `ppc64le`, `s390x` |
+| Alpine | `3.22`, `3.23`, `3.24` | `386`, `amd64`, `arm/v6`, `arm/v7`, `arm64`, `ppc64le`, `riscv64`, `s390x` |
+| Fedora | `44`, `45` | `amd64`, `arm64`, `ppc64le`, `s390x` |
 | AlmaLinux | `8`, `9` | `386`, `amd64`, `arm64`, `ppc64le`, `s390x` |
 | AlmaLinux | `10` | `386`, `amd64`, `amd64/v2`, `arm64`, `ppc64le`, `s390x` |
 | Arch Linux | `rolling` | `amd64` |

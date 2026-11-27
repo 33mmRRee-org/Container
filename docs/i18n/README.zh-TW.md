@@ -55,16 +55,16 @@ docker pull quay.io/thebigman/ubuntu:latest
 
 ## 版本與架構參考
 
-以下版本與架構參考來自 [2026 年 10 月 8 日的探索計畫](https://github.com/33mmRRee-org/Container/actions/runs/37741062225)。這些是探索到的目標；請從所選標籤的 **OS/Arch** 欄位或 OCI 索引確認已發布的架構。
+為各發行版建置的版本與平台。請從所選標籤的 OS/Arch 欄位或 OCI 索引確認已發布的架構。
 
 | 發行版 | 版本 | 平台 — 含 `linux/` 前綴 |
 |---|---|---|
-| Ubuntu | `22.04`, `24.04`, `26.04` | `amd64`, `arm/v7`, `arm64`, `ppc64le`, `riscv64`, `s390x` |
+| Ubuntu | `18.04`, `20.04`, `22.04`, `24.04`, `26.04` | `amd64`, `arm/v7`, `arm64`, `ppc64le`, `riscv64`, `s390x` |
 | Debian | `bookworm` | `386`, `amd64`, `arm/v7`, `arm64`, `ppc64le` |
 | Debian | `trixie` | `386`, `amd64`, `arm/v5`, `arm/v7`, `arm64`, `ppc64le`, `riscv64`, `s390x` |
 | CentOS Stream | `stream9`, `stream10` | `amd64`, `arm64`, `ppc64le`, `s390x` |
-| Alpine | `3.21`, `3.22`, `3.23`, `3.24` | `386`, `amd64`, `arm/v6`, `arm/v7`, `arm64`, `ppc64le`, `riscv64`, `s390x` |
-| Fedora | `43`, `44` | `amd64`, `arm64`, `ppc64le`, `s390x` |
+| Alpine | `3.22`, `3.23`, `3.24` | `386`, `amd64`, `arm/v6`, `arm/v7`, `arm64`, `ppc64le`, `riscv64`, `s390x` |
+| Fedora | `44`, `45` | `amd64`, `arm64`, `ppc64le`, `s390x` |
 | AlmaLinux | `8`, `9` | `386`, `amd64`, `arm64`, `ppc64le`, `s390x` |
 | AlmaLinux | `10` | `386`, `amd64`, `amd64/v2`, `arm64`, `ppc64le`, `s390x` |
 | Arch Linux | `rolling` | `amd64` |

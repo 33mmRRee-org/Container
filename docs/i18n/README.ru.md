@@ -55,16 +55,16 @@ docker pull quay.io/thebigman/ubuntu:latest
 
 ## Справочные версии и архитектуры
 
-Справочные версии и архитектуры из [плана обнаружения от 8 октября 2026 года](https://github.com/33mmRRee-org/Container/actions/runs/37741062225). Это обнаруженные цели; проверяйте опубликованные архитектуры в поле **OS/Arch** выбранного тега или в индексе OCI.
+Версии и платформы, собираемые для каждого дистрибутива. Проверяйте опубликованные архитектуры в поле OS/Arch выбранного тега или в его OCI-индексе.
 
 | Дистрибутив | Версии | Платформы — с префиксом `linux/` |
 |---|---|---|
-| Ubuntu | `22.04`, `24.04`, `26.04` | `amd64`, `arm/v7`, `arm64`, `ppc64le`, `riscv64`, `s390x` |
+| Ubuntu | `18.04`, `20.04`, `22.04`, `24.04`, `26.04` | `amd64`, `arm/v7`, `arm64`, `ppc64le`, `riscv64`, `s390x` |
 | Debian | `bookworm` | `386`, `amd64`, `arm/v7`, `arm64`, `ppc64le` |
 | Debian | `trixie` | `386`, `amd64`, `arm/v5`, `arm/v7`, `arm64`, `ppc64le`, `riscv64`, `s390x` |
 | CentOS Stream | `stream9`, `stream10` | `amd64`, `arm64`, `ppc64le`, `s390x` |
-| Alpine | `3.21`, `3.22`, `3.23`, `3.24` | `386`, `amd64`, `arm/v6`, `arm/v7`, `arm64`, `ppc64le`, `riscv64`, `s390x` |
-| Fedora | `43`, `44` | `amd64`, `arm64`, `ppc64le`, `s390x` |
+| Alpine | `3.22`, `3.23`, `3.24` | `386`, `amd64`, `arm/v6`, `arm/v7`, `arm64`, `ppc64le`, `riscv64`, `s390x` |
+| Fedora | `44`, `45` | `amd64`, `arm64`, `ppc64le`, `s390x` |
 | AlmaLinux | `8`, `9` | `386`, `amd64`, `arm64`, `ppc64le`, `s390x` |
 | AlmaLinux | `10` | `386`, `amd64`, `amd64/v2`, `arm64`, `ppc64le`, `s390x` |
 | Arch Linux | `rolling` | `amd64` |
